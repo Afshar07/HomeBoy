@@ -44,6 +44,21 @@
       ],
       "authority": "authoritative",
       "status": "conditional"
+    },
+    {
+      "id": "lg-network-control",
+      "kind": "project-context",
+      "scope": "Confirmed LG BH6730T capabilities, current network-discovery evidence, and the staged control investigation.",
+      "readWhen": [
+        "Investigating, implementing, or validating LG BH6730T network control.",
+        "Working with DLNA/UPnP discovery, LG proprietary control, media playback, transport, or volume control.",
+        "Building the ESP32 controller or its attached interface hardware."
+      ],
+      "read": [
+        ".ai/projects/lg-network-control.md"
+      ],
+      "authority": "authoritative",
+      "status": "active"
     }
   ],
   "agentRoutes": [

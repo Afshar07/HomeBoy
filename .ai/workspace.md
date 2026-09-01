@@ -1,8 +1,10 @@
-# homie Workspace
+# HomeBoy Workspace
 
 ## Purpose
 
-A fun sideproject for my home
+HomeBoy is an LG Home Theater Hack: turn an LG BH6730T into a frictionless,
+network-controlled music system, ideally controlled by an ESP32-based physical
+interface.
 
 Shared context belongs in this root. Project-specific implementation detail belongs in the owning project's index or local context.
 
@@ -13,3 +15,5 @@ Shared context belongs in this root. Project-specific implementation detail belo
 - Prefer existing project primitives and conventions.
 - Do not turn style-only work into behavior changes.
 - Verify changes in proportion to their risk.
+- Treat hardware and network observations as evidence with a timestamp or test
+  record; do not promote assumptions to confirmed device capabilities.

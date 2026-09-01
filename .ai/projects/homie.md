@@ -1,18 +1,27 @@
-# homie
+# HomeBoy
 
 ## Scope
 
-The whole context and code to connect to an LG BH6730T home theater system using lan
+Research and implementation for controlling an LG BH6730T home theater system
+over the local network and, if feasible, through an ESP32 physical controller.
 
 ## Local context
 
-When working directly in this project, add focused routes only when a real boundary appears. Do not load every local document by default.
+For LG device discovery, control-protocol work, DLNA/UPnP testing, or ESP32
+controller work, read `.ai/projects/lg-network-control.md`. Do not load local
+documents that are unrelated to the requested boundary.
 
 ## Ownership boundaries
 
-- This project owns its implementation details and local conventions.
-- Put cross-project contracts in `.ai/domains/` and register them in `.ai/context.json`.
+- This project owns LG device evidence, protocol experiments, controller code,
+  and hardware integration details.
+- Network control is preferred over adding a Bluetooth receiver. Investigate in
+  order: LG proprietary control, DLNA/UPnP, then infrared fallback.
+- Keep DLNA media-rendering support distinct from proof of transport, volume,
+  or general remote-control support.
 
 ## Verification
 
-- Document this project's package manager and targeted verification commands here.
+- No software toolchain or automated verification command is established yet.
+- Record repeatable discovery commands, request payloads, responses, pairing
+  prompts, and observed device behavior with the relevant experiment.
