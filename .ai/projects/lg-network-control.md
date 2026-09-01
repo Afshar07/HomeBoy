@@ -36,16 +36,25 @@ response or advertisement for `MediaRenderer`, `AVTransport`,
 `RenderingControl`, or `ConnectionManager` was found. Repeat this discovery
 with Network Play active before treating those negatives as current.
 
+## Discovery record: 2026-09-01
+
+- With the BH6730T powered on and Network Play enabled, active SSDP discovery
+  succeeded at `2026-09-01T21:55:59+03:30`.
+- Repeat with: `python3 scripts/discover_ssdp.py --all --timeout 5`
+- The device responded from `192.168.1.104:2870` and advertised
+  `MediaRenderer:1`, `AVTransport:1`, `RenderingControl:1`, and
+  `ConnectionManager:1`.
+- Device description: `http://192.168.1.104:2870/dmr.xml`
+- Server header: `LG-BDP Linux/2.6.35 UPnP/1.0 DLNADOC/1.50 LGE_DLNA_SDK/1.5.0`
+
 ## Next experiment
 
-1. Reboot the BH6730T with Network Play enabled.
-2. From Linux, perform active SSDP discovery for `MediaRenderer:1`.
-3. If discovered, retrieve its device-description document.
-4. Inspect advertised `AVTransport`, `RenderingControl`, and
+1. Retrieve the device-description document at `/dmr.xml`.
+2. Inspect advertised `AVTransport`, `RenderingControl`, and
    `ConnectionManager` services.
-5. Independently test compatible-media playback, transport controls, and volume
+3. Independently test compatible-media playback, transport controls, and volume
    control.
-6. Record ports, service URLs, request/response details, pairing prompts, and
+4. Record ports, service URLs, request/response details, pairing prompts, and
    behavior changes.
 
 ## Follow-on research
