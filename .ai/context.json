@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "workspace": "homie",
+  "workspace": "HomeBoy",
   "alwaysRead": [
     ".ai/workspace.md"
   ],
   "projects": [
     {
-      "id": "homie",
+      "id": "HomeBoy",
       "scope": "The whole context and code to connect to an LG BH6730T home theater system using lan",
       "match": [
         "."
       ],
       "read": [
-        ".ai/projects/homie.md"
+        ".ai/projects/HomeBoy.md"
       ],
       "status": "active"
     }

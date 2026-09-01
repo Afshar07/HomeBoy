@@ -1,4 +1,4 @@
-# homie Agent Router
+# HomeBoy Agent Router
 
 This file is the stable entry point for AI-assisted work in this workspace. Detailed routes live in `.ai/context.json`.
 
