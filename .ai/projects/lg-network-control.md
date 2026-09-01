@@ -7,9 +7,17 @@ with an ESP32 physical controller.
 
 ## Hardware
 
-- LG BH6730T; ESP32-WROOM-32 DevKit
-- ST7789V display, rotary encoder, WS2812B LED ring, INMP441 microphone
-- Linux PC on the same LAN
+- LG BH6730T home theater; Linux PC on the same LAN
+- ESP32-WROOM-32 DevKit (38-pin, CP2102)
+- 1.69-inch ST7789 TFT display
+- INMP441 I2S MEMS microphone
+- BME280 temperature/humidity/pressure sensor
+- DS3231 RTC
+- 24-LED WS2812 RGB ring
+- Rotary encoder; passive buzzer; CR2025 battery
+- Arduino Uno; STM32 Blue Pill
+- Servo; ultrasonic sensor; LDR; DHT11; OLED; touch sensor
+- Breadboards and jumper wires
 
 ## Confirmed receiver and service evidence
 
