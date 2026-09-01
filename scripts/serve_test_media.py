@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import mimetypes
+import time
 from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -53,9 +54,13 @@ def request_handler(root: Path, log: TextIO) -> type[BaseHTTPRequestHandler]:
             self.serve_media(include_body=False)
 
         def serve_media(self, *, include_body: bool) -> None:
+            started_at = datetime.now(timezone.utc)
+            started_monotonic = time.monotonic()
             status = HTTPStatus.OK
             served_range: tuple[int, int] | None = None
             size = 0
+            body_bytes_sent = 0
+            transfer_error: str | None = None
             try:
                 requested_path = Path(unquote(urlsplit(self.path).path).lstrip("/"))
                 file_path = (root / requested_path).resolve()
@@ -92,6 +97,7 @@ def request_handler(root: Path, log: TextIO) -> type[BaseHTTPRequestHandler]:
                             if not chunk:
                                 break
                             self.wfile.write(chunk)
+                            body_bytes_sent += len(chunk)
                             remaining -= len(chunk)
             except ValueError:
                 status = HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE
@@ -100,16 +106,20 @@ def request_handler(root: Path, log: TextIO) -> type[BaseHTTPRequestHandler]:
                 self.end_headers()
             except (BrokenPipeError, ConnectionResetError):
                 # The receiver may close a test transfer; retain the request record.
-                pass
+                transfer_error = "client_disconnected"
             finally:
                 record = {
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": started_at.isoformat(),
+                    "completed_at": datetime.now(timezone.utc).isoformat(),
+                    "duration_ms": round((time.monotonic() - started_monotonic) * 1000),
                     "client": self.client_address[0],
                     "method": self.command,
                     "path": self.path,
                     "request_headers": dict(self.headers.items()),
                     "response_status": status.value,
                     "served_range": list(served_range) if served_range else None,
+                    "body_bytes_sent": body_bytes_sent,
+                    "transfer_error": transfer_error,
                 }
                 log.write(json.dumps(record) + "\n")
                 log.flush()

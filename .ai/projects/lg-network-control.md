@@ -58,12 +58,51 @@ with an ESP32 physical controller.
 - The exact cause of the long startup delay is unknown; the request log does
   not record transferred-byte counts, so it does not establish full download
   versus buffering/retries.
+- Startup trace with the current Ethernet cable at `2026-09-01T19:57Z`
+  (`artifacts/startup-trace-current-cable.jsonl`) showed that the first GET
+  began immediately after playback was started (`19:57:11.685Z`). The LG then
+  issued many overlapping full-file GETs, all without `Range`, for the same
+  8,729,455-byte MP3. Early requests disconnected after 1.6–8.5 MB; later
+  requests repeatedly completed the entire file in roughly 0.6–0.8 seconds.
+  Audio was heard only after this repeated-fetch period. This rules out a
+  delayed *initial* HTTP request, but does not yet distinguish receiver
+  buffering/firmware behavior from a network-link contribution. Retest with a
+  known-good cable before treating the cable as causal.
+
+## DLNA streaming research: 2026-09-01
+
+- Repeated complete GETs without a `Range` header are valid renderer behavior.
+  The server must return the full representation for those requests; it must
+  not invent partial responses to suppress repeat downloads.
+- `transferMode.dlna.org: Streaming`, `Accept-Ranges: bytes`, and the current
+  MP3 `contentFeatures.dlna.org` format are broadly appropriate. Do not change
+  transfer mode, DLNA operation flags, or feature flags without a specific
+  compatibility hypothesis.
+- `TimeSeekRange.dlna.org` is for explicit time-based seeks, not ordinary
+  initial playback, and is unlikely to explain full GETs with no `Range`.
+- The next protocol check is metadata consistency: the DIDL-Lite resource
+  `protocolInfo` must agree exactly with HTTP `Content-Type` (`audio/mpeg`) and
+  `contentFeatures.dlna.org` MP3 profile/features. Include the correct resource
+  size where available.
+- The server now logs start/end time, duration, bytes sent, and client
+  disconnects, allowing response completeness to be verified before changing
+  compatibility behavior.
+- An explicit `Connection: close` response is safe only as a diagnostic
+  variant; it may increase reconnections and is not a proposed fix.
+- If complete, metadata-consistent responses still repeat, the leading
+  explanation is BH6730T renderer buffering/retry behavior rather than a
+  missing HTTP/DLNA feature.
+- Public references: [UPnP AV Architecture](https://www.upnp.org/specs/av/UPnP-av-AVArchitecture-v2.pdf),
+  [RFC 7230 HTTP persistence/framing](https://www.rfc-editor.org/rfc/rfc7230),
+  and [RFC 7233 range requests](https://www.rfc-editor.org/rfc/rfc7233).
 
 ## Current plan
 
 - [x] Connect, discover, inspect services, and play an MP3 from Linux.
 - [x] Test volume and mute. Stop works; direct-stream playback cannot pause.
 - [ ] Measure startup delay and streaming behavior with the working flow.
+- [ ] Verify DIDL-Lite/HTTP metadata consistency, then run one isolated
+  connection-behavior compatibility experiment.
 - [ ] Decide practical music sources (local files, PC audio, phone, Spotify).
 - [ ] Reproduce the working flow on ESP32, then add controls and UI.
 - [ ] Add automatic discovery; investigate power/input control separately.
