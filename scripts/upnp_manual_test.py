@@ -21,6 +21,7 @@ SERVICES = {
     "protocol-info": "ConnectionManager",
     "transport-info": "AVTransport",
     "volume": "RenderingControl",
+    "set-volume": "RenderingControl",
     "set-uri": "AVTransport",
     "play": "AVTransport",
     "pause": "AVTransport",
@@ -30,6 +31,7 @@ ACTION_NAMES = {
     "protocol-info": "GetProtocolInfo",
     "transport-info": "GetTransportInfo",
     "volume": "GetVolume",
+    "set-volume": "SetVolume",
     "set-uri": "SetAVTransportURI",
     "play": "Play",
     "pause": "Pause",
@@ -51,13 +53,20 @@ def didl_metadata(uri: str) -> str:
     )
 
 
-def action_body(action: str, uri: str | None, metadata: str) -> tuple[str, str]:
+def action_body(action: str, uri: str | None, metadata: str, volume: int | None) -> tuple[str, str]:
     if action == "protocol-info":
         return "ConnectionManager", ""
     if action == "transport-info":
         return "AVTransport", "<InstanceID>0</InstanceID>"
     if action == "volume":
         return "RenderingControl", "<InstanceID>0</InstanceID><Channel>Master</Channel>"
+    if action == "set-volume":
+        if volume is None:
+            raise ValueError("--volume is required for set-volume")
+        return (
+            "RenderingControl",
+            f"<InstanceID>0</InstanceID><Channel>Master</Channel><DesiredVolume>{volume}</DesiredVolume>",
+        )
     if action == "set-uri":
         if not uri:
             raise ValueError("--uri is required for set-uri")
@@ -89,12 +98,15 @@ def main() -> int:
     parser.add_argument("--action", choices=SERVICES, required=True)
     parser.add_argument("--uri", help="HTTP URL the receiver can reach; required by set-uri")
     parser.add_argument("--metadata", choices=("didl", "empty"), default="didl")
+    parser.add_argument("--volume", type=int, help="volume from 0 to 100; required by set-volume")
     parser.add_argument("--device", default=DEFAULT_DEVICE, help=f"receiver base URL (default: {DEFAULT_DEVICE})")
     parser.add_argument("--output-dir", type=Path, default=Path("artifacts/upnp-tests"))
     args = parser.parse_args()
 
     try:
-        service, body = action_body(args.action, args.uri, args.metadata)
+        if args.volume is not None and not 0 <= args.volume <= 100:
+            raise ValueError("--volume must be between 0 and 100")
+        service, body = action_body(args.action, args.uri, args.metadata, args.volume)
     except ValueError as error:
         parser.error(str(error))
 
