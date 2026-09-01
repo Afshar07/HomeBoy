@@ -31,8 +31,9 @@ with an ESP32 physical controller.
   raising the level.
 - `Stop` returned HTTP 200 and changed transport state to `STOPPED` at
   `19:28:44Z`. `Pause` returned UPnP error 701 (`No Such Object`) while the
-  receiver still reported `PLAYING`; the advertised Pause action is not yet
-  usable through this control flow.
+  receiver still reported `PLAYING`. While playing at `19:36:09Z`,
+  `GetCurrentTransportActions` returned only `Play,Stop`; Pause is not a
+  currently supported action for this direct-stream flow.
 
 ## Confirmed Linux-to-LG MP3 playback: 2026-09-01
 
@@ -53,7 +54,7 @@ with an ESP32 physical controller.
 ## Current plan
 
 - [x] Connect, discover, inspect services, and play an MP3 from Linux.
-- [ ] Test mute and resolve the failed Pause action; volume and Stop work.
+- [ ] Test mute; volume and Stop work. Direct-stream playback cannot pause.
 - [ ] Measure startup delay and streaming behavior with the working flow.
 - [ ] Decide practical music sources (local files, PC audio, phone, Spotify).
 - [ ] Reproduce the working flow on ESP32, then add controls and UI.

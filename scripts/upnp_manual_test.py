@@ -20,6 +20,7 @@ DEFAULT_DEVICE = "http://192.168.1.104:2870"
 SERVICES = {
     "protocol-info": "ConnectionManager",
     "transport-info": "AVTransport",
+    "transport-actions": "AVTransport",
     "volume": "RenderingControl",
     "set-volume": "RenderingControl",
     "set-uri": "AVTransport",
@@ -30,6 +31,7 @@ SERVICES = {
 ACTION_NAMES = {
     "protocol-info": "GetProtocolInfo",
     "transport-info": "GetTransportInfo",
+    "transport-actions": "GetCurrentTransportActions",
     "volume": "GetVolume",
     "set-volume": "SetVolume",
     "set-uri": "SetAVTransportURI",
@@ -57,6 +59,8 @@ def action_body(action: str, uri: str | None, metadata: str, volume: int | None)
     if action == "protocol-info":
         return "ConnectionManager", ""
     if action == "transport-info":
+        return "AVTransport", "<InstanceID>0</InstanceID>"
+    if action == "transport-actions":
         return "AVTransport", "<InstanceID>0</InstanceID>"
     if action == "volume":
         return "RenderingControl", "<InstanceID>0</InstanceID><Channel>Master</Channel>"
