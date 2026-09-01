@@ -72,10 +72,14 @@ with an ESP32 physical controller.
 
 ```sh
 python3 scripts/discover_ssdp.py --all --timeout 5
-python3 scripts/serve_test_media.py
-python3 scripts/upnp_manual_test.py --action set-uri --uri http://192.168.1.103:8000/gdaal.mp3
-python3 scripts/upnp_manual_test.py --action play
+python3 scripts/play_to_lg.py assets/gdaal.mp3
+python3 scripts/play_to_lg.py --stop
 ```
 
-SOAP artifacts go in `artifacts/upnp-tests/`; HTTP request logs go in
-`artifacts/media-requests.jsonl` (both intentionally untracked).
+`play_to_lg.py` derives the PC's LAN address, starts the media server when it
+is not already running, and sends the DIDL-Lite Set URI and Play commands.
+Use `--dry-run` to inspect its derived URL without network control.
+`--stop` sends Stop to the receiver then stops the exact recorded server PID;
+it never uses process-name matching. `--stop-playback` and `--stop-server` are
+also available separately. HTTP request logs and the PID file go in
+`artifacts/` (intentionally untracked).
