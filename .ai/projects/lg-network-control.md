@@ -2,130 +2,64 @@
 
 ## Goal
 
-Make the LG BH6730T a frictionless network-controlled music system using
-existing hardware, preferably an ESP32 physical controller.
+Make the LG BH6730T a frictionless network-controlled music system, ultimately
+with an ESP32 physical controller.
 
-## Available hardware
+## Hardware
 
-- LG BH6730T home theater
-- ESP32-WROOM-32 DevKit
-- ST7789V TFT display, rotary encoder, WS2812B LED ring, and INMP441 microphone
-- Linux PC and the existing home network
+- LG BH6730T; ESP32-WROOM-32 DevKit
+- ST7789V display, rotary encoder, WS2812B LED ring, INMP441 microphone
+- Linux PC on the same LAN
 
-The display may present playback and system status; the encoder may provide
-volume and navigation; the LED ring may provide state feedback. The microphone
-is reserved for future audio-reactive or input experiments.
+## Confirmed receiver and service evidence
 
-## HomeBoy plan
+- IP: `192.168.1.104`; MAC: `98:93:cc:07:4f:1f`
+- Firmware: `BD3.412.50203.C`; Network Play is enabled.
+- The receiver is a DLNA `MediaRenderer:1` at
+  `http://192.168.1.104:2870/dmr.xml`, advertising `AVTransport:1`,
+  `RenderingControl:1`, and `ConnectionManager:1`.
+- Control URLs:
+  - AVTransport: `http://192.168.1.104:2870/control/AVTransport`
+  - RenderingControl: `http://192.168.1.104:2870/control/RenderingControl`
+  - ConnectionManager: `http://192.168.1.104:2870/control/ConnectionManager`
+- `GetProtocolInfo` confirms HTTP GET MP3 support with `DLNA.ORG_PN=MP3`.
+- AVTransport supports URI selection and `Play`, `Pause`, `Stop`, `Seek`,
+  `Next`, `Previous`, and state queries. RenderingControl advertises `Master`
+  volume (0–100) and mute actions.
 
-- [x] Connect BH6730T to LAN
-- [x] Identify it on network → `192.168.1.104`
-- [x] Update firmware → `BD3.412.50203.C`
-- [x] Enable **Network Play**
-- [x] Confirm from LG UI that **DMR is explicitly supported**
-- [x] Rerun SSDP discovery with Network Play enabled
-- [x] Find its `MediaRenderer` advertisement + `LOCATION` XML
-- [x] Inspect advertised `AVTransport`, `RenderingControl`, and `ConnectionManager`
-- [ ] From Linux, send a simple **Play this MP3** command to the LG
-- [ ] Test play/pause/stop/volume
-- [ ] Test serving/streaming music from Linux → LG
-- [ ] Figure out what sources we can realistically feed it: local files, PC audio, phone, Spotify/etc.
-- [ ] Reproduce the working UPnP control flow on the **ESP32**
-- [ ] Add rotary encoder → volume/playback
-- [ ] Add ST7789 TFT → track/status/device UI
-- [ ] Add WS2812 ring → playback/status visualization
-- [ ] Make discovery automatic so ESP32 finds the LG without hardcoded IP
-- [ ] Investigate power/input control separately — UPnP if possible, otherwise LG protocol/IR
-- [ ] Eventually make the whole thing feel like one appliance: **turn it on → choose music → it plays**
+## Confirmed Linux-to-LG MP3 playback: 2026-09-01
 
-## Confirmed device evidence
+- `assets/gdaal.mp3` is MPEG Layer III, 320 kbps, 44.1 kHz. It played audibly
+  after a roughly two-minute delay when served from
+  `http://192.168.1.103:8000/gdaal.mp3`.
+- Successful control flow: `SetAVTransportURI` with DIDL-Lite metadata, then
+  `Play`, both using `InstanceID` `0`. The bare-URI flow does not work.
+- `scripts/serve_test_media.py` is the required test server: it responds with
+  HTTP/1.1, MP3 DLNA content features, byte-range support, and request logging.
+- During playback the receiver repeatedly made full-file `GET` requests with
+  `transferMode.dlna.org: Streaming`, without `Range`. At
+  `2026-09-01T19:11:18Z`, `GetTransportInfo` returned `PLAYING` / `OK`.
+- The exact cause of the long startup delay is unknown; the request log does
+  not record transferred-byte counts, so it does not establish full download
+  versus buffering/retries.
 
-- IP address: `192.168.1.104`
-- MAC address: `98:93:cc:07:4f:1f` (LG Electronics OUI)
-- Software: `BD3.412.50203.C`; Driver/Loader: `H12SON0420`
-- The device software was updated before further network-control testing.
-- Ethernet, DLNA, HDMI output, legacy LG network/remote functionality, and DMR
-  are available. Network Play is enabled.
-- The device setting states that DMR permits media streamed from home-networked
-  devices. This confirms media-renderer capability only—not network transport,
-  volume, or general remote control.
+## Current plan
 
-## Prior discovery results
+- [x] Connect, discover, inspect services, and play an MP3 from Linux.
+- [ ] Test `GetVolume`, `SetVolume`, mute, and playback transport controls.
+- [ ] Measure startup delay and streaming behavior with the working flow.
+- [ ] Decide practical music sources (local files, PC audio, phone, Spotify).
+- [ ] Reproduce the working flow on ESP32, then add controls and UI.
+- [ ] Add automatic discovery; investigate power/input control separately.
 
-Before Network Play was confirmed and enabled, TCP HTTP services were observed
-on ports `46211` and `57626`; both returned `404 Not Found` for `/`. No SSDP
-response or advertisement for `MediaRenderer`, `AVTransport`,
-`RenderingControl`, or `ConnectionManager` was found. Repeat this discovery
-with Network Play active before treating those negatives as current.
+## Commands
 
-## Discovery record: 2026-09-01
+```sh
+python3 scripts/discover_ssdp.py --all --timeout 5
+python3 scripts/serve_test_media.py
+python3 scripts/upnp_manual_test.py --action set-uri --uri http://192.168.1.103:8000/gdaal.mp3
+python3 scripts/upnp_manual_test.py --action play
+```
 
-- With the BH6730T powered on and Network Play enabled, active SSDP discovery
-  succeeded at `2026-09-01T21:55:59+03:30`.
-- Repeat with: `python3 scripts/discover_ssdp.py --all --timeout 5`
-- The device responded from `192.168.1.104:2870` and advertised
-  `MediaRenderer:1`, `AVTransport:1`, `RenderingControl:1`, and
-  `ConnectionManager:1`.
-- Device description: `http://192.168.1.104:2870/dmr.xml`
-- Server header: `LG-BDP Linux/2.6.35 UPnP/1.0 DLNADOC/1.50 LGE_DLNA_SDK/1.5.0`
-
-## Service inspection record: 2026-09-01
-
-- Retrieved `dmr.xml` and all three service-description documents at
-  `2026-09-01T22:01:31+03:30`. These are advertised capabilities; their SOAP
-  behavior has not yet been tested.
-- `AVTransport`:
-  - SCPD: `http://192.168.1.104:2870/dmr_avts.xml`
-  - Control: `http://192.168.1.104:2870/control/AVTransport`
-  - Advertised actions include `SetAVTransportURI`, `Play`, `Pause`, `Stop`,
-    `Seek`, `Next`, `Previous`, and transport/media status queries.
-- `RenderingControl`:
-  - SCPD: `http://192.168.1.104:2870/dmr_rcs.xml`
-  - Control: `http://192.168.1.104:2870/control/RenderingControl`
-  - Advertised actions include `GetVolume`, `SetVolume`, `GetMute`, and
-    `SetMute`; volume is declared as `0`–`100` and the `Master` channel is
-    allowed.
-- `ConnectionManager`:
-  - SCPD: `http://192.168.1.104:2870/dmr_cms.xml`
-  - Control: `http://192.168.1.104:2870/control/ConnectionManager`
-  - Advertised actions include `GetProtocolInfo`, `GetCurrentConnectionIDs`,
-    and `GetCurrentConnectionInfo`.
-
-## Playback test record: 2026-09-01
-
-- At `2026-09-01T22:17:23+03:30`, served `assets/gdaal.mp3` from the Linux PC
-  at `http://192.168.1.103:8000/gdaal.mp3`. The file is MPEG Layer III, 320
-  kbps, 44.1 kHz; the server returned `Content-Type: audio/mpeg`.
-- `GetProtocolInfo` confirms the receiver supports `http-get` MP3 playback,
-  including the `DLNA.ORG_PN=MP3` profile.
-- `SetAVTransportURI` and `Play` both returned successful SOAP responses using
-  `InstanceID` `0` and the HTTP URL above with empty `CurrentURIMetaData`.
-- The receiver issued a successful `HEAD /gdaal.mp3`, but no media `GET`; three
-  seconds later, `GetTransportInfo` returned `NO_MEDIA_PRESENT`. The bare URI
-  flow therefore did not start playback.
-- At `2026-09-01T22:25:44+03:30`, a retry with DIDL-Lite metadata succeeded in
-  reaching the media-fetch stage: `SetAVTransportURI` and `Play` returned
-  successful SOAP responses, `GetTransportInfo` reported `TRANSITIONING`, and
-  the receiver made repeated successful `GET /gdaal.mp3` requests.
-- The receiver then reset several TCP connections mid-transfer. Python's HTTP
-  server reported `ConnectionResetError`; this proves the receiver—not the PC—
-  closed those connections. Playback/audio and any visible device restart are
-  not yet confirmed, so the cause remains unknown.
-
-## Next experiment
-
-1. Capture the receiver's HTTP request headers (especially `Range`) and serve
-   the MP3 with the requested byte-range behavior; correlate this with the LG
-   screen, audio output, and transport state.
-2. Call the read-only `GetVolume` action, then independently test playback
-   transport controls and volume.
-3. Test serving/streaming music from Linux with the working metadata flow.
-4. Record ports, service URLs, request/response details, pairing prompts, and
-   behavior changes.
-
-## Follow-on research
-
-- Reverse-engineer the legacy LG Remote app protocol and capture its pairing and
-  control traffic.
-- Investigate the BD-J/Java environment as an independent track.
-- Explore Linux monitor input switching through DDC/CI.
+SOAP artifacts go in `artifacts/upnp-tests/`; HTTP request logs go in
+`artifacts/media-requests.jsonl` (both intentionally untracked).
