@@ -22,6 +22,7 @@ documents that are unrelated to the requested boundary.
 
 ## Verification
 
-- No software toolchain or automated verification command is established yet.
-- Record repeatable discovery commands, request payloads, responses, pairing
+- No general software toolchain is established yet. For repeatable UPnP/DLNA
+  discovery, run `python3 scripts/discover_ssdp.py --all --timeout 5`.
+- Record discovery commands, SOAP request payloads and responses, pairing
   prompts, and observed device behavior with the relevant experiment.
