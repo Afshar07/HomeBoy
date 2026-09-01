@@ -84,6 +84,19 @@ with an ESP32 physical controller.
   `protocolInfo` must agree exactly with HTTP `Content-Type` (`audio/mpeg`) and
   `contentFeatures.dlna.org` MP3 profile/features. Include the correct resource
   size where available.
+- `scripts/upnp_manual_test.py` and `scripts/play_to_lg.py` now send
+  `http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;DLNA.ORG_OP=01;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01500000000000000000000000000000`
+  in DIDL-Lite `protocolInfo`; the launcher also includes the local MP3 byte
+  size. Generated metadata was verified locally, but not yet playback-tested
+  on the receiver.
+- Clean receiver test at `2026-09-01T20:07Z` with the aligned metadata
+  (`artifacts/startup-trace-metadata-aligned.jsonl`) started audibly with no
+  perceptible delay. Unlike the previous full GET behavior, the receiver made
+  six `Range` requests in about 1.5 seconds: initial `bytes=0-8729454`
+  requests followed by resume offsets near byte 333,000. The server returned
+  correct `206` responses. The update changed both complete `protocolInfo` and
+  resource `size`, so this result establishes that the aligned metadata fixes
+  startup behavior but does not isolate which metadata field caused it.
 - The server now logs start/end time, duration, bytes sent, and client
   disconnects, allowing response completeness to be verified before changing
   compatibility behavior.
@@ -100,9 +113,9 @@ with an ESP32 physical controller.
 
 - [x] Connect, discover, inspect services, and play an MP3 from Linux.
 - [x] Test volume and mute. Stop works; direct-stream playback cannot pause.
-- [ ] Measure startup delay and streaming behavior with the working flow.
-- [ ] Verify DIDL-Lite/HTTP metadata consistency, then run one isolated
-  connection-behavior compatibility experiment.
+- [x] Measure startup delay and streaming behavior with the working flow.
+- [x] Verify DIDL-Lite/HTTP metadata consistency; aligned metadata enables
+  immediate playback and range-based requests.
 - [ ] Decide practical music sources (local files, PC audio, phone, Spotify).
 - [ ] Reproduce the working flow on ESP32, then add controls and UI.
 - [ ] Add automatic discovery; investigate power/input control separately.

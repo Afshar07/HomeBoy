@@ -17,6 +17,10 @@ from urllib.request import Request, urlopen
 
 
 DEFAULT_DEVICE = "http://192.168.1.104:2870"
+DLNA_MP3_PROTOCOL_INFO = (
+    "http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;DLNA.ORG_OP=01;"
+    "DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01500000000000000000000000000000"
+)
 SERVICES = {
     "protocol-info": "ConnectionManager",
     "transport-info": "AVTransport",
@@ -45,8 +49,9 @@ ACTION_NAMES = {
 }
 
 
-def didl_metadata(uri: str) -> str:
+def didl_metadata(uri: str, media_size: int | None = None) -> str:
     title = Path(uri.split("?", 1)[0]).name or "HomeBoy test media"
+    size_attribute = "" if media_size is None else f' size="{media_size}"'
     return (
         '<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" '
         'xmlns:dc="http://purl.org/dc/elements/1.1/" '
@@ -54,13 +59,18 @@ def didl_metadata(uri: str) -> str:
         '<item id="homeboy-test" parentID="0" restricted="1">'
         f"<dc:title>{html.escape(title)}</dc:title>"
         "<upnp:class>object.item.audioItem.musicTrack</upnp:class>"
-        f'<res protocolInfo="http-get:*:audio/mpeg:DLNA.ORG_PN=MP3">{html.escape(uri)}</res>'
+        f'<res protocolInfo="{DLNA_MP3_PROTOCOL_INFO}"{size_attribute}>{html.escape(uri)}</res>'
         "</item></DIDL-Lite>"
     )
 
 
 def action_body(
-    action: str, uri: str | None, metadata: str, volume: int | None, mute: bool | None
+    action: str,
+    uri: str | None,
+    metadata: str,
+    volume: int | None,
+    mute: bool | None,
+    media_size: int | None = None,
 ) -> tuple[str, str]:
     if action == "protocol-info":
         return "ConnectionManager", ""
@@ -89,7 +99,7 @@ def action_body(
     if action == "set-uri":
         if not uri:
             raise ValueError("--uri is required for set-uri")
-        current_metadata = "" if metadata == "empty" else didl_metadata(uri)
+        current_metadata = "" if metadata == "empty" else didl_metadata(uri, media_size)
         return (
             "AVTransport",
             "<InstanceID>0</InstanceID>"
@@ -117,6 +127,7 @@ def main() -> int:
     parser.add_argument("--action", choices=SERVICES, required=True)
     parser.add_argument("--uri", help="HTTP URL the receiver can reach; required by set-uri")
     parser.add_argument("--metadata", choices=("didl", "empty"), default="didl")
+    parser.add_argument("--media-size", type=int, help="optional byte size for DIDL-Lite set-uri metadata")
     parser.add_argument("--volume", type=int, help="volume from 0 to 100; required by set-volume")
     parser.add_argument("--mute", choices=("true", "false"), help="required by set-mute")
     parser.add_argument("--device", default=DEFAULT_DEVICE, help=f"receiver base URL (default: {DEFAULT_DEVICE})")
@@ -126,8 +137,10 @@ def main() -> int:
     try:
         if args.volume is not None and not 0 <= args.volume <= 100:
             raise ValueError("--volume must be between 0 and 100")
+        if args.media_size is not None and args.media_size < 0:
+            raise ValueError("--media-size must not be negative")
         mute = None if args.mute is None else args.mute == "true"
-        service, body = action_body(args.action, args.uri, args.metadata, args.volume, mute)
+        service, body = action_body(args.action, args.uri, args.metadata, args.volume, mute, args.media_size)
     except ValueError as error:
         parser.error(str(error))
 

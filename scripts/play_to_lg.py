@@ -100,8 +100,8 @@ def start_server(directory: Path, port: int, log: Path, pid_path: Path) -> int |
     raise RuntimeError(f"media server did not start on port {port}")
 
 
-def send_action(device: str, action: str, uri: str | None = None) -> int:
-    service, body = action_body(action, uri, "didl", None, None)
+def send_action(device: str, action: str, uri: str | None = None, media_size: int | None = None) -> int:
+    service, body = action_body(action, uri, "didl", None, None, media_size)
     action_name = ACTION_NAMES[action]
     service_urn = f"urn:schemas-upnp-org:service:{service}:1"
     request = Request(
@@ -181,7 +181,7 @@ def main() -> int:
 
     try:
         server_pid = start_server(media.parent, args.port, args.log, args.pid_file)
-        set_uri_status = send_action(args.device, "set-uri", uri)
+        set_uri_status = send_action(args.device, "set-uri", uri, media.stat().st_size)
         play_status = send_action(args.device, "play")
     except (RuntimeError, ValueError) as error:
         print(error, file=sys.stderr)
