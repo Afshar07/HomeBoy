@@ -24,5 +24,8 @@ documents that are unrelated to the requested boundary.
 
 - No general software toolchain is established yet. For repeatable UPnP/DLNA
   discovery, run `python3 scripts/discover_ssdp.py --all --timeout 5`.
+- For one explicit SOAP action, run `python3 scripts/upnp_manual_test.py` with
+  an `--action`. It saves the request and response (or connection error) in
+  `artifacts/upnp-tests/`, which is intentionally untracked.
 - Record discovery commands, SOAP request payloads and responses, pairing
   prompts, and observed device behavior with the relevant experiment.

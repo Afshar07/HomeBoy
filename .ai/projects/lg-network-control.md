@@ -91,13 +91,36 @@ with Network Play active before treating those negatives as current.
   - Advertised actions include `GetProtocolInfo`, `GetCurrentConnectionIDs`,
     and `GetCurrentConnectionInfo`.
 
+## Playback test record: 2026-09-01
+
+- At `2026-09-01T22:17:23+03:30`, served `assets/gdaal.mp3` from the Linux PC
+  at `http://192.168.1.103:8000/gdaal.mp3`. The file is MPEG Layer III, 320
+  kbps, 44.1 kHz; the server returned `Content-Type: audio/mpeg`.
+- `GetProtocolInfo` confirms the receiver supports `http-get` MP3 playback,
+  including the `DLNA.ORG_PN=MP3` profile.
+- `SetAVTransportURI` and `Play` both returned successful SOAP responses using
+  `InstanceID` `0` and the HTTP URL above with empty `CurrentURIMetaData`.
+- The receiver issued a successful `HEAD /gdaal.mp3`, but no media `GET`; three
+  seconds later, `GetTransportInfo` returned `NO_MEDIA_PRESENT`. The bare URI
+  flow therefore did not start playback.
+- At `2026-09-01T22:25:44+03:30`, a retry with DIDL-Lite metadata succeeded in
+  reaching the media-fetch stage: `SetAVTransportURI` and `Play` returned
+  successful SOAP responses, `GetTransportInfo` reported `TRANSITIONING`, and
+  the receiver made repeated successful `GET /gdaal.mp3` requests.
+- The receiver then reset several TCP connections mid-transfer. Python's HTTP
+  server reported `ConnectionResetError`; this proves the receiver—not the PC—
+  closed those connections. Playback/audio and any visible device restart are
+  not yet confirmed, so the cause remains unknown.
+
 ## Next experiment
 
-1. Call the read-only SOAP actions `GetProtocolInfo`, `GetTransportInfo`, and
-   `GetVolume` to establish request format and current state.
-2. Independently test compatible-media playback, transport controls, and volume
-   control.
-3. Record ports, service URLs, request/response details, pairing prompts, and
+1. Capture the receiver's HTTP request headers (especially `Range`) and serve
+   the MP3 with the requested byte-range behavior; correlate this with the LG
+   screen, audio output, and transport state.
+2. Call the read-only `GetVolume` action, then independently test playback
+   transport controls and volume.
+3. Test serving/streaming music from Linux with the working metadata flow.
+4. Record ports, service URLs, request/response details, pairing prompts, and
    behavior changes.
 
 ## Follow-on research
