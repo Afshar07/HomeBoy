@@ -29,6 +29,14 @@ with an ESP32 physical controller.
 - `GetVolume` returned 15 at `2026-09-01T19:15:50Z`; `SetVolume` to 12 then
   `GetVolume` returned 12 at `19:16:44Z`. Volume control is confirmed without
   raising the level.
+- `GetMute` / `SetMute` were tested at `19:38Z`: the user heard a brief mute
+  then unmute. The receiver is currently unmuted. The user changed volume with
+  the physical remote; a final `GetVolume` at `19:39:08Z` confirmed the current
+  volume is 16.
+- The physical UI reports a value 10 lower than the UPnP value in two observed
+  cases: UPnP 16 displayed as 6, and UPnP 12 displayed as 2. Treat this as a
+  provisional `UI volume = UPnP volume - 10` mapping until tested at more
+  points.
 - `Stop` returned HTTP 200 and changed transport state to `STOPPED` at
   `19:28:44Z`. `Pause` returned UPnP error 701 (`No Such Object`) while the
   receiver still reported `PLAYING`. While playing at `19:36:09Z`,
@@ -54,7 +62,7 @@ with an ESP32 physical controller.
 ## Current plan
 
 - [x] Connect, discover, inspect services, and play an MP3 from Linux.
-- [ ] Test mute; volume and Stop work. Direct-stream playback cannot pause.
+- [x] Test volume and mute. Stop works; direct-stream playback cannot pause.
 - [ ] Measure startup delay and streaming behavior with the working flow.
 - [ ] Decide practical music sources (local files, PC audio, phone, Spotify).
 - [ ] Reproduce the working flow on ESP32, then add controls and UI.
